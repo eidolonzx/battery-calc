@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Калькулятор ёмкости АКБ</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="./styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="table-container"></div>
+        <br><br>
+        <div class="inputs">
+            <input type="search" list="devices-list" name="input-device" placeholder="Название устройства" class="device-name">
+            <datalist id="devices-list"></datalist>
+            <input type="number" name="input-quantity" placeholder="Количество" min="1" max="1000">
+            <button id="add-device">Добавить к расчёту</button>
+            <button id="convert-to-doc">Сохранить</button>
+        </div>
+        <div class="service-message"></div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script type="module" src="./app.js"></script>
+</body>
+
+</html>
