@@ -3,10 +3,27 @@ import {
 } from './devices.js';
 
 $(document).ready(function () {
+    const devices = [];
+    let currentVoltage = 12;
+    let alarmHours = 1;
     let deviceCounter = 0;
     let rowCounter = 0;
-    const defaultAmperages = [];
-    const alarmAmperages = [];
+    const results = {
+        sumNormal: 0,
+        sumAlarm: 0,
+        calculatedCapacity: function () {
+            return this.sumNormal * 24 + this.sumAlarm * alarmHours;
+        },
+        factCapacity: function () {
+            const batteries = [4.5, 7, 9, 12, 14, 18, 24, 26, 32, 40, 52, 80];
+            for (let value of batteries) {
+                if (value >= this.calculatedCapacity()) return value;
+            }
+            return -1;
+        }
+    }
+
+
 
     const table = `<table class="selected-devices">
     <caption>Таблица устройств</caption>
@@ -62,12 +79,6 @@ $(document).ready(function () {
         $(".service-message").html("");
     }
 
-    const sumOfArrayNumbers = (array) => {
-        return array.reduce(function (sum, current) {
-            return sum + current;
-        }, 0);
-    }
-
     const addZeroMessage = () => {
         $(".service-message").html("<br>Добавьте хотя бы одно устройство для расчёта.");
         $(".selected-devices").css("display", "none");
@@ -88,6 +99,14 @@ $(document).ready(function () {
         }
     }
 
+    const setStartState = () => {
+        $('#voltage12').prop('checked', true);
+        $('#voltage24').prop('checked', false);
+        $('#time241').prop('checked', true);
+        $('#time243').prop('checked', false);
+        clearInputs();
+    }
+
     const getPowerSupply = (capacity) => {
         const batteries = [4.5, 7, 9, 12, 14, 18, 24, 26, 32, 40, 52, 80];
         for (let value of batteries) {
@@ -97,54 +116,103 @@ $(document).ready(function () {
     }
 
     const calculate = () => {
+        results.sumNormal = 0;
+        results.sumAlarm = 0;
+        for (let i = 0; i < devices.length; i += 1) {
+            results.sumNormal += getAmperage(devices[i].id, "default", currentVoltage) * devices[i].quantity;
+            results.sumAlarm += getAmperage(devices[i].id, "alarm", currentVoltage) * devices[i].quantity;
+        }
+        // results.calculatedCapacity = (24 * results.sumNormal + alarmHours * results.sumAlarm) / 0.7;
+        // results.factCapacity = getPowerSupply(results.calculatedCapacity);
+    }
 
+    const getAmperage = (deviceId, type, voltage) => {
+        let amperage = -1;
+        if (type === "default") {
+            if (voltage === 12) {
+                amperage = devicesList[deviceId].defaultAmperage12;
+            } else if (voltage === 24) {
+                amperage = devicesList[deviceId].defaultAmperage24;
+            }
+        } else if (type === "alarm") {
+            if (voltage === 12) {
+                amperage = devicesList[deviceId].alarmAmperage12;
+            } else if (voltage === 24) {
+                amperage = devicesList[deviceId].alarmAmperage24;
+            }
+        }
+        if (amperage === -1) {
+            $(".service-message").html(`<br><span style="color: red;">Данное устройство не рассчитано на работу от источника ${currentVoltage}В.</span>`);
+            amperage = 0;
+        }
+       
+        return amperage;
+    }
 
-        const sumDefaultAmperages = sumOfArrayNumbers(defaultAmperages);
-        const sumAlarmAmperages = sumOfArrayNumbers(alarmAmperages);
+    const generateTable = () => {
+        clearServiceMessage();
+        if (rowCounter === 0) {
+            addZeroMessage();
+        } else {
+            calculate();
+            let row;
+            $(".table-container").html(table);
+            for (let device of devices) {
+                row = `<tr id="dev-${device.deviceNumber}"><td>${devicesList[device.id].name}</td><td>${device.quantity}</td>`;
+                row += `<td>${getAmperage(devicesList[device.id].id, "default", currentVoltage).toFixed(3)}</td><td>${(getAmperage(devicesList[device.id].id, "default", currentVoltage) * device.quantity).toFixed(3)}</td>`;
+                row += `<td>${getAmperage(devicesList[device.id].id, "alarm", currentVoltage).toFixed(3)}</td><td>${(getAmperage(devicesList[device.id].id, "alarm", currentVoltage) * device.quantity).toFixed(3)}</td>`;
+                row += `<td class="without-borders"><button class="remove-device" id="remove-${device.deviceNumber}"><i class="fas fa-minus-circle"></i></button></td></tr>`;
+                $("#devices-for-calculate").append(row);
+                $(`#remove-${device.deviceNumber}`).on("click", function (e) {
+                    removeDevice(e);
+                });
+            }
 
-        const calculatedCapacity = (24 * sumDefaultAmperages + sumAlarmAmperages) / 0.7;
-        $("#sum-normal").html(sumDefaultAmperages.toFixed(3));
-        $("#sum-alarm").html(sumAlarmAmperages.toFixed(3));
-        $("#calculated-capacity").html(calculatedCapacity.toFixed(3));
-        // $("#fact-capacity").html(getBatteryCapacity(calculatedCapacity).toFixed(3));
-        $("#fact-capacity").html(getPowerSupply(calculatedCapacity));
+            $("#sum-normal").html(results.sumNormal.toFixed(3));
+            $("#sum-alarm").html(results.sumAlarm.toFixed(3));
+            $("#calculated-capacity").html(results.calculatedCapacity().toFixed(3));
+
+            if (results.factCapacity === -1) {
+                $("#fact-capacity").html('<span style="color: red;">>80</span>');
+                $(".service-message").html("<br>Расчётная ёмкость превышает 80 Ач. Добавьте дополнительный источник питания или батарейный блок.");
+            } else {
+                $("#fact-capacity").html(results.factCapacity());
+            }
+        }
     }
 
     const addDevice = () => {
 
-        // 1. Читаем данные из поля ввода
+        // Читаем данные из поля ввода
         const inputDevice = $('input[name="input-device"]').val();
-        const quantityOfDevices = $('input[name="input-quantity"]').val();
+        const quantityOfDevices = parseInt($('input[name="input-quantity"]').val());
         clearInputs();
 
-        // 2. Получаем объект, соответствующий введённому устройству
+        // Получаем объект, соответствующий введённому устройству
         const device = getInputDevice(inputDevice);
+        const deviceId = device.id;
 
+        // Если ввод корректный, и устройство есть в базе
         if (device !== undefined) {
-
             if (rowCounter === 0) {
                 removeZeroMessage();
             }
 
-            // 3. Добавляем объект в таблицу
-            const id = `#remove-${deviceCounter}`;
-
-            $("#devices-for-calculate").append(`<tr id="dev-${deviceCounter}"><td>${device.name}</td><td>${quantityOfDevices}</td><td>${device.defaultAmperage.toFixed(3)}</td><td>${(device.defaultAmperage * quantityOfDevices).toFixed(3)}</td><td>${device.alarmAmperage.toFixed(3)}</td><td>${(device.alarmAmperage * quantityOfDevices).toFixed(3)}</td><td class="without-borders"><button class="remove-device" id="remove-${deviceCounter}"><i class="fas fa-minus-circle"></i></button></td></tr>`)
-
-            $(id).on("click", function (e) {
-                removeDevice(e);
+            // Добавляем объект в базу
+            devices.push({
+                deviceNumber: deviceCounter,
+                id: deviceId,
+                quantity: quantityOfDevices
             });
 
-            // 4. Добавляем токи объекта в расчёт
-            defaultAmperages[deviceCounter] = device.defaultAmperage * quantityOfDevices;
-            alarmAmperages[deviceCounter] = device.alarmAmperage * quantityOfDevices;
-
-            // 5. Делаем пересчёт
-            calculate();
-
-            // 6. Изменяем счётчики
+            // Изменяем счётчики
             deviceCounter += 1;
             rowCounter += 1;
+
+            // Рендерим таблицу
+            generateTable();
+
+
         } else if (inputDevice.length === 0) {
             $(".service-message").html('<br><span style="color: red;">Введите название устройства.</span>');
             $(".device-name").addClass("uncorrect");
@@ -155,16 +223,14 @@ $(document).ready(function () {
     }
 
     const removeDevice = (e) => {
-        const devId = e.target.id.slice(7);
-        const rowId = `#dev-${devId}`;
-        $(rowId).remove();
-        defaultAmperages[parseInt(devId)] = 0;
-        alarmAmperages[parseInt(devId)] = 0;
-        calculate();
+        let devId = e.target.id.slice(7);
+        devId = parseInt(devId);
+
+        const indexOfRemovedDevice = devices.findIndex(e => e.deviceNumber === devId);
+        devices.splice(indexOfRemovedDevice, 1);
+
         rowCounter -= 1;
-        if (rowCounter === 0) {
-            addZeroMessage();
-        }
+        generateTable();
     }
 
     const setupEventHandlers = () => {
@@ -175,13 +241,29 @@ $(document).ready(function () {
             $(".device-name").removeClass("uncorrect");
             clearServiceMessage();
         });
+        $("input:radio[name=voltage]").change(function () {
+            if (this.value == '12V') {
+                currentVoltage = 12;
+            } else if (this.value == '24V') {
+                currentVoltage = 24;
+            }
+            generateTable();
+        });
+        $("input:radio[name=time]").change(function () {
+            if (this.value == '241') {
+                alarmHours = 1;
+            } else if (this.value == '243') {
+                alarmHours = 3;
+            }
+            generateTable();
+        });
     }
 
     const start = () => {
         makeDataList(devicesList);
-        $(".table-container").html(table);
+        generateTable();
         addZeroMessage();
-        clearInputs();
+        setStartState();
         setupEventHandlers();
     }
 
