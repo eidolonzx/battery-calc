@@ -1,3 +1,9 @@
+body {
+    color: black;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    font-size: 14px;
+}
+
 table {
     border-collapse: collapse;
     width: 100%;
@@ -13,10 +19,8 @@ th {
     font-weight: 400;
 }
 
-body {
-    color: black;
-    font-family: Verdana, Geneva, Tahoma, sans-serif;
-    font-size: 14px;
+fieldset {
+    border: 1px solid silver;
 }
 
 button {
@@ -35,8 +39,15 @@ button {
 }
 
 .container {
-    display: block;
-    width: 640px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    height: 100%;
+    width: 100%;
+}
+
+.flex-container {
+    padding: 10px;
 }
 .inputs {
     width: 100%;

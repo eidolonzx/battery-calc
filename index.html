@@ -13,23 +13,31 @@
 
 <body>
     <div class="container">
-        <form>
-            <p>Выберите вольтаж источника питания</p>
-            <p><input id="voltage12" type="radio" name="voltage" value="12V"> 12В  
-            <input id="voltage24" type="radio" name="voltage" value="24V"> 24В</p>
-            <p>Выберите расчётное время</p>
-            <p><input id="time241" type="radio" name="time" value="241"> 24 часа в дежурном режиме + 1 час в режиме тревоги</p>  
-            <p><input id="time243" type="radio" name="time" value="243"> 24 часа в дежурном режиме + 3 часа в режиме тревоги</p>
-        </form>
-        <div class="table-container"></div>
-        <br><br>
-        <div class="inputs">
-            <input type="search" list="devices-list" name="input-device" placeholder="Название устройства" class="device-name">
-            <datalist id="devices-list"></datalist>
-            <input type="number" name="input-quantity" placeholder="Количество" min="1" max="1000">
-            <button id="add-device">Добавить к расчёту</button>
+        <div class="flex-container">
+            <form>
+                <fieldset>
+                    
+                <p>Выберите вольтаж источника питания</p>
+                <p><input id="voltage12" type="radio" name="voltage" value="12V"> 12В
+                    <input id="voltage24" type="radio" name="voltage" value="24V"> 24В</p>
+                <p>Выберите расчётное время</p>
+                <p><input id="time241" type="radio" name="time" value="241"> 24 часа в дежурном режиме + 1 час в режиме
+                    тревоги</p>
+                <p><input id="time243" type="radio" name="time" value="243"> 24 часа в дежурном режиме + 3 часа в
+                    режиме тревоги</p>
+                </fieldset>
+                <br>
+            </form>
+            <div class="inputs">
+                <input type="search" list="devices-list" name="input-device" placeholder="Название устройства" class="device-name">
+                <datalist id="devices-list"></datalist>
+                <input type="number" name="input-quantity" placeholder="Количество" min="1" max="1000">
+                <button id="add-device">Добавить к расчёту</button>
+            </div>
+            <div class="service-message"></div>
         </div>
-        <div class="service-message"></div>
+
+        <div class="flex-container table-container"></div>
     </div>
     <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
     <script type="module" src="./app.js"></script>
