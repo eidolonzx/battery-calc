@@ -26,7 +26,6 @@ $(document).ready(function () {
 
 
     const table = `<table class="selected-devices">
-    <caption>Таблица устройств</caption>
     <thead>
         <tr>
             <th rowspan="2" width="20%">Устройство</th>
@@ -172,9 +171,9 @@ $(document).ready(function () {
             $("#sum-alarm").html(results.sumAlarm.toFixed(3));
             $("#calculated-capacity").html(results.calculatedCapacity().toFixed(3));
 
-            if (results.factCapacity === -1) {
+            if (results.factCapacity() === -1) {
                 $("#fact-capacity").html('<span style="color: red;">>80</span>');
-                $(".service-message").html("<br>Расчётная ёмкость превышает 80 Ач. Добавьте дополнительный источник питания или батарейный блок.");
+                $(".service-message").html("<br>Расчётная ёмкость превышает 80 Ач, добавьте батарейный блок.");
             } else {
                 $("#fact-capacity").html(results.factCapacity());
             }
