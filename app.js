@@ -28,17 +28,17 @@ $(document).ready(function () {
     const table = `<table class="selected-devices">
     <thead>
         <tr>
-            <th rowspan="2" width="20%">Устройство</th>
-            <th rowspan="2" width="10%">Кол.</th>
+            <th rowspan="2" width="25%">Устройство</th>
+            <th rowspan="2" width="5%">Кол.</th>
             <th colspan="2" width="30%">Потребляемый ток<br /> в дежурном режиме, А</th>
             <th colspan="2" width="30%">Потребляемый ток<br /> в режиме тревоги, А</th>
             <th width="10%" class="without-borders">&nbsp;</th>
         </tr>
         <tr>
             <th width="15%">Ед.</th>
-            <th width="15%">Суммарно</th>
+            <th width="15%">Сумм.</th>
             <th width="15%">Ед.</th>
-            <th width="15%">Суммарно</th>
+            <th width="15%">Сумм.</th>
             <th class="without-borders">&nbsp;</th>
         </tr>
     </thead>
@@ -52,12 +52,12 @@ $(document).ready(function () {
             <th class="without-borders"></th>
         </tr>
         <tr class="result-row">
-            <th colspan="4">Требуемая ёмкость АКБ</th>
+            <th colspan="4">Требуемая ёмкость АКБ, Ач</th>
             <th colspan="2" id="calculated-capacity">0</th>
             <th class="without-borders"></th>
         </tr>
         <tr class="result-row">
-            <th colspan="4">Фактическая ёмкость АКБ</th>
+            <th colspan="4">Фактическая ёмкость АКБ, Ач</th>
             <th colspan="2" id="fact-capacity">0</th>
             <th class="without-borders"></th>
         </tr>
@@ -79,7 +79,7 @@ $(document).ready(function () {
     }
 
     const addZeroMessage = () => {
-        $(".service-message").html("<br>Добавьте хотя бы одно устройство для расчёта.");
+        $(".service-message").html("Добавьте хотя бы одно устройство для расчёта.");
         $(".selected-devices").css("display", "none");
     }
 
@@ -141,7 +141,7 @@ $(document).ready(function () {
             }
         }
         if (amperage === -1) {
-            $(".service-message").html(`<br><span style="color: red;">Данное устройство не рассчитано на работу от источника ${currentVoltage}В.</span>`);
+            $(".service-message").html(`<span class="error">Невозможно выполнить правильный расчёт, одно из устройств<br>не предназначено для работы при выбранном режиме ${currentVoltage}В.</span>`);
             amperage = 0;
         }
        
@@ -154,14 +154,19 @@ $(document).ready(function () {
             addZeroMessage();
         } else {
             calculate();
-            let row;
+            let row, defaultA, alarmA;
             $(".table-container").html(table);
             for (let device of devices) {
+                defaultA = getAmperage(devicesList[device.id].id, "default", currentVoltage);
+                alarmA = getAmperage(devicesList[device.id].id, "alarm", currentVoltage);
                 row = `<tr id="dev-${device.deviceNumber}"><td>${devicesList[device.id].name}</td><td>${device.quantity}</td>`;
-                row += `<td>${getAmperage(devicesList[device.id].id, "default", currentVoltage).toFixed(3)}</td><td>${(getAmperage(devicesList[device.id].id, "default", currentVoltage) * device.quantity).toFixed(3)}</td>`;
-                row += `<td>${getAmperage(devicesList[device.id].id, "alarm", currentVoltage).toFixed(3)}</td><td>${(getAmperage(devicesList[device.id].id, "alarm", currentVoltage) * device.quantity).toFixed(3)}</td>`;
+                row += `<td>${defaultA.toFixed(3)}</td><td>${(defaultA * device.quantity).toFixed(3)}</td>`;
+                row += `<td>${alarmA.toFixed(3)}</td><td>${(alarmA * device.quantity).toFixed(3)}</td>`;
                 row += `<td class="without-borders"><button class="remove-device" id="remove-${device.deviceNumber}"><i class="fas fa-minus-circle"></i></button></td></tr>`;
                 $("#devices-for-calculate").append(row);
+                if (alarmA === 0) {
+                    $(`#dev-${device.deviceNumber}`).addClass("error");
+                }
                 $(`#remove-${device.deviceNumber}`).on("click", function (e) {
                     removeDevice(e);
                 });
@@ -172,7 +177,7 @@ $(document).ready(function () {
             $("#calculated-capacity").html(results.calculatedCapacity().toFixed(3));
 
             if (results.factCapacity() === -1) {
-                $("#fact-capacity").html('<span style="color: red;">>80</span>');
+                $("#fact-capacity").html('<span class="error">>80</span>');
                 $(".service-message").html("<br>Расчётная ёмкость превышает 80 Ач, добавьте батарейный блок.");
             } else {
                 $("#fact-capacity").html(results.factCapacity());
